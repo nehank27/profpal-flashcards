@@ -1,10 +1,38 @@
+'use client'
 import Image from "next/image";
 import getStripe from "@/utils/get-stripe";
 import {SignedIn, SignedOut, UserButton} from '@clerk/nextjs'
 import { Container, Toolbar, Typography, AppBar,Button, Box, Grid } from "@mui/material";
 import Head from 'next/head'
+import { GSP_NO_RETURNED_VALUE } from "next/dist/lib/constants";
 
 export default function Home() {
+
+  const handleSubmit = async ()=>{
+    const checkoutSession = await fetch('/api/checkout_session', {
+      method: 'POST',
+      headers: {
+        origin: 'http://localhost:3000',
+      },
+    })
+
+    const checkoutSessionJson = await checkoutSession.json()
+
+    if(checkoutSession.statusCode === 500) {
+      console.error(checkoutSession.message)
+      return
+    }
+
+    const stripe = await getStripe()
+    const {error} = await stripe.redirectToCheckout({
+      sessionId: checkoutSessionJson.id,
+    })
+     
+    if(error){
+      console.warn(error.message)
+    }
+  }
+
   return (
     <Container maxWidth="100vw">
       <Head>
@@ -70,7 +98,7 @@ export default function Home() {
           <Typography variant="h5" gutterBottom>Premium</Typography>
           <Typography variant="h6" gutterBottom>$5 / month</Typography>
           <Typography>{' '}Access to advanced features, more storage and usage.</Typography>
-          <Button variant="contained" color="primary" sx={{mt:2}}>Go Premium</Button>
+          <Button variant="contained" color="primary" sx={{mt:2}} onClick={handleSubmit}>Go Premium</Button>
           </Box>
         </Grid>
         <Grid item xs={12} md={4}>
